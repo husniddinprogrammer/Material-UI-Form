@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React from "react";
+import { useForm, Controller } from "react-hook-form";
 import {
   Container,
   TextField,
@@ -19,75 +20,38 @@ import {
 } from "@mui/material";
 
 const FormDemo = () => {
-  const [text, setText] = useState("");
-  const [radio, setRadio] = useState("");
-  const [dropdown, setDropdown] = useState("");
-  const [date, setDate] = useState("");
-  const [checkbox, setCheckbox] = useState({
-    option1: false,
-    option2: false,
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm({
+    defaultValues: {
+      text: "",
+      radio: "",
+      dropdown: "",
+      date: "",
+      checkbox: {
+        option1: false,
+        option2: false,
+      },
+      slider: 30,
+    },
   });
-  const [slider, setSlider] = useState(30);
-  const [errors, setErrors] = useState({
-    text: false,
-    radio: false,
-    dropdown: false,
-    date: false,
-  });
 
-  const validateForm = () => {
-    const newErrors = {
-      text: !text.trim(),
-      radio: !radio,
-      dropdown: !dropdown,
-      date: !date,
-    };
-    setErrors(newErrors);
-    return !Object.values(newErrors).some(error => error);
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
-    const formData = {
-      text,
-      radio,
-      dropdown,
-      date,
-      checkbox,
-      slider,
-    };
-
-    console.log("Form Data:", formData);
+  const onSubmit = (data) => {
+    console.log("Form Data:", data);
   };
 
   const handleReset = () => {
-    setText("");
-    setRadio("");
-    setDropdown("");
-    setDate("");
-    setCheckbox({
-      option1: false,
-      option2: false,
-    });
-    setSlider(30);
-    setErrors({
-      text: false,
-      radio: false,
-      dropdown: false,
-      date: false,
-    });
+    reset();
   };
 
   return (
     <Container maxWidth="sm">
       <Box
         component="form"
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmit(onSubmit)}
         sx={{ mt: 5, p: 3, boxShadow: 3, borderRadius: 2 }}
       >
         <Typography variant="h5" gutterBottom>
@@ -95,167 +59,216 @@ const FormDemo = () => {
         </Typography>
 
         {/* Text Input */}
-        <TextField
-          fullWidth
-          label="Text Input"
-          margin="normal"
-          value={text}
-          onChange={(e) => {
-            setText(e.target.value);
-            if (errors.text) {
-              setErrors({...errors, text: false});
+        <Controller
+          name="text"
+          control={control}
+          rules={{ 
+            required: "This field is required",
+            minLength: {
+              value: 3,
+              message: "Minimum 3 characters required"
+            },
+            maxLength: {
+              value: 50,
+              message: "Maximum 50 characters allowed"
             }
           }}
-          required
-          error={errors.text}
-          helperText={errors.text ? "This field is required" : ""}
-          sx={{
-            '& .MuiOutlinedInput-root.Mui-error fieldset': {
-              borderColor: 'red !important',
-              borderWidth: 2,
-            },
-          }}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              fullWidth
+              label="Text Input (3-50 chars)"
+              margin="normal"
+              required
+              error={!!errors.text}
+              helperText={errors.text?.message || "Enter 3-50 characters"}
+              sx={{
+                '& .MuiOutlinedInput-root.Mui-error fieldset': {
+                  borderColor: 'red !important',
+                  borderWidth: 2,
+                },
+              }}
+            />
+          )}
         />
 
         {/* Radio Input */}
-        <FormControl 
-          margin="normal" 
-          required 
-          error={errors.radio}
-        >
-          <FormLabel sx={{ color: errors.radio ? 'red' : 'inherit' }}>Radio Input</FormLabel>
-          <RadioGroup
-            value={radio}
-            onChange={(e) => {
-              setRadio(e.target.value);
-              if (errors.radio) {
-                setErrors({...errors, radio: false});
-              }
-            }}
-          >
-            <FormControlLabel
-              value="option1"
-              control={<Radio />}
-              label="Radio Option 1"
-            />
-            <FormControlLabel
-              value="option2"
-              control={<Radio />}
-              label="Radio Option 2"
-            />
-          </RadioGroup>
-          {errors.radio && (
-            <Typography variant="caption" color="error">
-              This field is required
-            </Typography>
+        <Controller
+          name="radio"
+          control={control}
+          rules={{ required: "Please select an option" }}
+          render={({ field }) => (
+            <FormControl margin="normal" required error={!!errors.radio}>
+              <FormLabel sx={{ color: errors.radio ? 'red' : 'inherit' }}>Radio Input (Required)</FormLabel>
+              <RadioGroup {...field}>
+                <FormControlLabel
+                  value="option1"
+                  control={<Radio />}
+                  label="Radio Option 1"
+                />
+                <FormControlLabel
+                  value="option2"
+                  control={<Radio />}
+                  label="Radio Option 2"
+                />
+              </RadioGroup>
+              {errors.radio && (
+                <Typography variant="caption" color="error">
+                  {errors.radio.message}
+                </Typography>
+              )}
+            </FormControl>
           )}
-        </FormControl>
+        />
 
         {/* Dropdown Input */}
-        <FormControl 
-          fullWidth 
-          margin="normal" 
-          required 
-          error={errors.dropdown}
-          sx={{
-            '& .MuiOutlinedInput-root.Mui-error fieldset': {
-              borderColor: 'red !important',
-              borderWidth: 2,
-            },
-          }}
-        >
-          <InputLabel sx={{ color: errors.dropdown ? 'red' : 'inherit' }}>Dropdown Input</InputLabel>
-          <Select
-            value={dropdown}
-            label="Dropdown Input"
-            onChange={(e) => {
-              setDropdown(e.target.value);
-              if (errors.dropdown) {
-                setErrors({...errors, dropdown: false});
-              }
-            }}
-          >
-            <MenuItem value="item1">Item 1</MenuItem>
-            <MenuItem value="item2">Item 2</MenuItem>
-            <MenuItem value="item3">Item 3</MenuItem>
-          </Select>
-          {errors.dropdown && (
-            <Typography variant="caption" color="error">
-              This field is required
-            </Typography>
+        <Controller
+          name="dropdown"
+          control={control}
+          rules={{ required: "Please select an option" }}
+          render={({ field }) => (
+            <FormControl 
+              fullWidth 
+              margin="normal" 
+              required 
+              error={!!errors.dropdown}
+              sx={{
+                '& .MuiOutlinedInput-root.Mui-error fieldset': {
+                  borderColor: 'red !important',
+                  borderWidth: 2,
+                },
+              }}
+            >
+              <InputLabel sx={{ color: errors.dropdown ? 'red' : 'inherit' }}>Dropdown Input (Required)</InputLabel>
+              <Select
+                {...field}
+                label="Dropdown Input (Required)"
+              >
+                <MenuItem value="item1">Item 1</MenuItem>
+                <MenuItem value="item2">Item 2</MenuItem>
+                <MenuItem value="item3">Item 3</MenuItem>
+              </Select>
+              {errors.dropdown && (
+                <Typography variant="caption" color="error">
+                  {errors.dropdown.message}
+                </Typography>
+              )}
+            </FormControl>
           )}
-        </FormControl>
+        />
 
         {/* Date Input */}
-        <TextField
-          fullWidth
-          margin="normal"
-          type="date"
-          label="Date Input"
-          InputLabelProps={{ shrink: true }}
-          value={date}
-          onChange={(e) => {
-            setDate(e.target.value);
-            if (errors.date) {
-              setErrors({...errors, date: false});
+        <Controller
+          name="date"
+          control={control}
+          rules={{ 
+            required: "Please select a date",
+            validate: {
+              notFuture: (value) => {
+                const selectedDate = new Date(value);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                return selectedDate <= today || "Date cannot be in the future";
+              },
+              notTooPast: (value) => {
+                const selectedDate = new Date(value);
+                const minDate = new Date();
+                minDate.setFullYear(minDate.getFullYear() - 100);
+                return selectedDate >= minDate || "Date cannot be more than 100 years ago";
+              }
             }
           }}
-          required
-          error={errors.date}
-          helperText={errors.date ? "This field is required" : ""}
-          sx={{
-            '& .MuiOutlinedInput-root.Mui-error fieldset': {
-              borderColor: 'red !important',
-              borderWidth: 2,
-            },
-          }}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              fullWidth
+              margin="normal"
+              type="date"
+              label="Date Input (Required)"
+              InputLabelProps={{ shrink: true }}
+              required
+              error={!!errors.date}
+              helperText={errors.date?.message || "Select a valid date (not future)"}
+              sx={{
+                '& .MuiOutlinedInput-root.Mui-error fieldset': {
+                  borderColor: 'red !important',
+                  borderWidth: 2,
+                },
+              }}
+            />
+          )}
         />
 
         {/* Checkbox Input */}
-        <FormControl margin="normal">
-          <FormLabel>Checkbox Input</FormLabel>
-          <FormGroup row>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={checkbox.option1}
-                  onChange={(e) =>
-                    setCheckbox({
-                      ...checkbox,
-                      option1: e.target.checked,
-                    })
+        <Controller
+          name="checkbox.option1"
+          control={control}
+          render={({ field }) => (
+            <FormControl margin="normal">
+              <FormLabel>Checkbox Input</FormLabel>
+              <FormGroup row>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      {...field}
+                      checked={field.value}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                    />
                   }
+                  label="Checkbox Option 1"
                 />
-              }
-              label="Checkbox Option 1"
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={checkbox.option2}
-                  onChange={(e) =>
-                    setCheckbox({
-                      ...checkbox,
-                      option2: e.target.checked,
-                    })
-                  }
+                <Controller
+                  name="checkbox.option2"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          {...field}
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                        />
+                      }
+                      label="Checkbox Option 2"
+                    />
+                  )}
                 />
-              }
-              label="Checkbox Option 2"
-            />
-          </FormGroup>
-        </FormControl>
+              </FormGroup>
+            </FormControl>
+          )}
+        />
 
         {/* Slider Input */}
-        <Box mt={3}>
-          <FormLabel>Slider Input</FormLabel>
-          <Slider
-            value={slider}
-            onChange={(e, newValue) => setSlider(newValue)}
-            min={0}
-            max={100}
-          />
-        </Box>
+        <Controller
+          name="slider"
+          control={control}
+          rules={{ 
+            min: {
+              value: 10,
+              message: "Minimum value is 10"
+            },
+            max: {
+              value: 90,
+              message: "Maximum value is 90"
+            }
+          }}
+          render={({ field }) => (
+            <Box mt={3}>
+              <Slider
+                {...field}
+                min={0}
+                max={100}
+                valueLabelDisplay="auto"
+                
+              />
+              {errors.slider && (
+                <Typography variant="caption" color="error">
+                  {errors.slider.message}
+                </Typography>
+              )}
+            </Box>
+          )}
+        />
 
         {/* Buttons */}
         <Box mt={3}>
@@ -269,6 +282,7 @@ const FormDemo = () => {
           </Button>
 
           <Button
+            type="button"
             variant="outlined"
             fullWidth
             onClick={handleReset}
